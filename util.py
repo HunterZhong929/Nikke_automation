@@ -74,9 +74,7 @@ def init():
     # https://github.com/NateScarlet/auto-derby/issues/11
     windll.user32.SetProcessDPIAware()
 
-def myfunc():
-    print("my function")
-    return
+
 
 def set_client_size(h_wnd: int, width: int, height: int):
     init()

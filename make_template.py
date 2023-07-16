@@ -13,6 +13,7 @@ import sys
 import os
 from pyuac import main_requires_admin
 import util
+import device
 
 
 def add_middle_ext(name: Text, value: Text) -> Text:
@@ -45,7 +46,7 @@ def create_pos_mask(
     ow,oh = origin_img.shape[:2]
     print(ow,oh)
     #the below weird number is for padding of the client size and the top window bar when we taking a screen shot, there are 8 extra pixel on left, right and bottom, 31 for the top bar
-    out_img = np.zeros((720+31+8, 1080+16), dtype=np.uint8)
+    out_img = np.zeros((720, 1080), dtype=np.uint8)
     locations = match(game_img,template_img,threshold)
     mask = np.zeros(np.array(game_img.convert('L')).shape[:2], np.uint8)
     template_h, template_w = np.array(template_img.convert('L')).shape[:2]
@@ -75,55 +76,23 @@ def main():
     path = r"C:\Hunter\Nikke_Automation\templates_list"        
 
     parser = argparse.ArgumentParser(description='provide a template image, make template pos ')
-
+    
     parser.add_argument('--name', help='template name')
     args = parser.parse_args()
     template_name = "\\"+args.name+".png"
     print(template_name)
     
-    #test: screenshot
+    device.g.last_screenshot_save_path = "last_screenshot.png"
+    
     hwnd_target =  win32gui.FindWindow("UnityWndClass","NIKKE")
-    win32gui.ShowWindow(hwnd_target,5)
-    win32gui.SetForegroundWindow(hwnd_target) #Chrome handle be used for test 
-    set_window_size(hwnd_target)
-    print(hwnd_target)
-    print("set size succesful")
-    left, top, right, bot = win32gui.GetWindowRect(hwnd_target)
-    w = right - left
-    h = bot - top
     
-    
-    time.sleep(1.0)
+    client = device.Device(hwnd_target)
 
-    hdesktop = win32gui.GetDesktopWindow()
-    hwndDC = win32gui.GetWindowDC(hdesktop)
-    mfcDC  = win32ui.CreateDCFromHandle(hwndDC)
-    saveDC = mfcDC.CreateCompatibleDC()
+    screenshot = client.screenshot()
+    screenshot.save("last_screenshot.png")
 
-    saveBitMap = win32ui.CreateBitmap()
-    saveBitMap.CreateCompatibleBitmap(mfcDC, w, h)
 
-    saveDC.SelectObject(saveBitMap)
-
-    result = saveDC.BitBlt((0, 0), (w, h), mfcDC, (left, top), win32con.SRCCOPY)
-
-    bmpinfo = saveBitMap.GetInfo()
-    bmpstr = saveBitMap.GetBitmapBits(True)
-
-    im = PIL.Image.frombuffer(
-        'RGB',
-        (bmpinfo['bmWidth'], bmpinfo['bmHeight']),
-        bmpstr, 'raw', 'BGRX', 0, 1)
-
-    win32gui.DeleteObject(saveBitMap.GetHandle())
-    saveDC.DeleteDC()
-    mfcDC.DeleteDC()
-    win32gui.ReleaseDC(hdesktop, hwndDC)
-
-    if result == None:
-        #PrintWindow Succeeded
-        print("success")
-        im.save("last_screenshot.png")
+        
         
     template_pil = PIL.Image.open(path+template_name)
     image_pil = PIL.Image.open("last_screenshot.png")
